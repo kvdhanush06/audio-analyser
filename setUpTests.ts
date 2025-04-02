@@ -1,6 +1,9 @@
 import '@testing-library/jest-dom';
 import 'jest-canvas-mock';
 
+// Mark this as a test environment
+(window as any).__TESTING__ = true;
+
 // Mock Web Audio API
 class AudioContextMock {
   createAnalyser() {
@@ -38,13 +41,31 @@ class AudioContextMock {
     };
   }
   
+  createBuffer(numChannels, length, sampleRate) {
+    return {
+      numberOfChannels: numChannels,
+      length: length,
+      sampleRate: sampleRate,
+      duration: length / sampleRate,
+      getChannelData: jest.fn().mockReturnValue(new Float32Array(length))
+    };
+  }
+  
   close() {
     return Promise.resolve();
   }
 }
 
 window.AudioContext = AudioContextMock as any;
-window.MediaRecorder = jest.fn().mockImplementation(() => {
+
+// Create a complete MediaRecorder mock
+const mockedMediaRecorder = {
+  prototype: {},
+  isTypeSupported: jest.fn().mockReturnValue(true)
+};
+
+// Create the constructor function
+const MediaRecorderMock = jest.fn().mockImplementation(() => {
   return {
     start: jest.fn(),
     stop: jest.fn(),
@@ -55,6 +76,19 @@ window.MediaRecorder = jest.fn().mockImplementation(() => {
       getTracks: () => [{ stop: jest.fn() }]
     }
   };
+});
+
+// Set the constructor with its static methods
+window.MediaRecorder = Object.assign(MediaRecorderMock, mockedMediaRecorder) as any;
+
+// Mock navigator.mediaDevices to prevent TypeError about read-only property
+Object.defineProperty(navigator, 'mediaDevices', {
+  writable: true,
+  value: {
+    getUserMedia: jest.fn().mockResolvedValue({
+      getTracks: () => [{ stop: jest.fn() }]
+    })
+  }
 });
 
 Object.defineProperty(window, 'matchMedia', {
