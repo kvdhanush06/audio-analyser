@@ -38,7 +38,7 @@ const Index = () => {
                         Record audio to analyze musical notes. The app will detect the notes using
                         frequency analysis and display them on the piano roll below.
                       </p>
-                      <AudioVisualizer />
+                      {/* <AudioVisualizer /> */}
                     </div>
                   </div>
 
